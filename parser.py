@@ -62,6 +62,28 @@ class CalcLexer(Lexer):
         print("Illegal character '%s'" % t.value[0])
         self.index += 1
 
+'''
+Estructura para modelar las restricciones
+
+curr_context = i
+
+info_checks = {
+    i: {
+        parametros: 1,
+        signatura: [variables],
+        patrones: [
+            patron: {
+                varX: True,
+                varX
+            }
+        ]
+    }
+}
+
+
+'''
+
+
 class CalcParser(Parser):
     # Get the token list from the lexer (required)
     tokens = CalcLexer.tokens
