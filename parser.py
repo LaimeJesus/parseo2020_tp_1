@@ -1,4 +1,8 @@
 from sly import Lexer, Parser
+from sys import argv, stdin
+from pprint import PrettyPrinter
+
+pp = PrettyPrinter(indent=4)
 
 class CalcLexer(Lexer):
 
@@ -30,8 +34,6 @@ class CalcLexer(Lexer):
     # Tokens
     FUN         = r'fun'
     CHECK       = r'check'
-    LOWERID     = r'[a-z][_a-zA-Z0-9]*'
-    UPPERID     = r'[A-Z][_a-zA-Z0-9]*'
     ARROW       = r'->'
     COMMA       = r','
     LPAREN      = r'\('
@@ -47,6 +49,9 @@ class CalcLexer(Lexer):
     QUESTION    = r'\?'
     BANG        = r'!'
     EQ          = '=='
+    LOWERID     = r'[a-z][_a-zA-Z0-9]*'
+    UPPERID     = r'[A-Z][_a-zA-Z0-9]*'
+
 
 
     # Ignored pattern
@@ -90,9 +95,22 @@ class CalcParser(Parser):
     #debugfile = 'parser.out'
     start = 'program'
 
-    @_('declaraciones')
+    def __init__(self):
+        self.current_context = None
+        self.state = {}
+
+    def addFunction(self, fun, params):
+        pass
+    
+    def addSignature(self, fun):
+        pass
+
+    def addPattern(self, rule, patron):
+        pass
+
+    @_('declaraciones chequeos')
     def program(self, p):
-        return ('program', p.declaraciones)
+        return ['program', p.declaraciones, p.chequeos]
 
     @_('declaraciones declaracion')
     def declaraciones(self, p):
@@ -104,15 +122,15 @@ class CalcParser(Parser):
 
     @_('FUN LOWERID signatura precondicion postcondicion reglas')
     def declaracion(self, p):
-        return ('fun', p.LOWERID, p.signatura, p.precondicion, p.postcondicion, p.reglas)
+        return ['fun', p.LOWERID, p.signatura, p.precondicion, p.postcondicion, p.reglas]
 
     @_('empty')
     def signatura(self, p):
-        pass
+        return []
 
     @_('COLON listaParametros ARROW parametro')
     def signatura(self, p):
-        return (':', p.listaParametros, '->', p.parametro)
+        return [':', p.listaParametros, '->', p.parametro]
 
     @_('empty')
     def listaParametros(self, p):
@@ -124,19 +142,19 @@ class CalcParser(Parser):
 
     @_('parametro')
     def listaParametrosNoVacia(self, p):
-        return p.parametro
+        return [p.parametro]
 
     @_('parametro COMMA listaParametrosNoVacia')
     def listaParametrosNoVacia(self, p):
-        return (p.parametro, ',', p.listaParametrosNoVacia)
+        return [p.parametro, ',', p.listaParametrosNoVacia]
 
     @_('UNDERSCORE')
     def parametro(self, p):
-        return ('_', p.UNDERSCORE)
+        return ['_', p.UNDERSCORE]
 
     @_('LOWERID')
     def parametro(self, p):
-        return ('LOWERID', p.LOWERID)
+        return ['LOWERID', p.LOWERID]
 
     @_('empty')
     def reglas(self, p):
@@ -148,55 +166,55 @@ class CalcParser(Parser):
 
     @_('listaPatrones ARROW expresion')
     def regla(self, p):
-        return (p.listaPatrones, '->', p.expresion)
+        return [p.listaPatrones, '->', p.expresion]
 
     @_('empty')
     def listaPatrones(self, p):
-        pass
+        return []
 
     @_('listaPatronesNoVacia')
     def listaPatrones(self, p):
-        return (p.listaPatronesNoVacia)
+        return [p.listaPatronesNoVacia]
 
     @_('patron')
     def listaPatronesNoVacia(self, p):
-        return (p.patron)
+        return [p.patron]
 
     @_('patron COMMA listaPatronesNoVacia')
     def listaPatronesNoVacia(self, p):
-        return (p.patron, ',', p.listaParametrosNoVacia)
+        return [p.patron, ',', p.listaParametrosNoVacia]
 
     @_('UNDERSCORE')
     def patron(self, p):
-        return ('_', p.UNDERSCORE)
+        return ['_', p.UNDERSCORE]
 
     @_('LOWERID')
     def patron(self, p):
-        return ('LOWERID', p.LOWERID)
+        return ['LOWERID', p.LOWERID]
 
     @_('UPPERID')
     def patron(self, p):
-        return ('UPPERID', p.UPPERID)
+        return ['UPPERID', p.UPPERID]
 
     @_('UPPERID LPAREN listaPatrones RPAREN')
     def patron(self, p):
-        return ('UPPERID', p.UPPERID, '(', p.listaPatrones, ')')
+        return ['UPPERID', p.UPPERID, '(', p.listaPatrones, ')']
 
     @_('empty')
     def precondicion(self, p):
-        pass
+        return []
 
     @_('QUESTION formula')
     def precondicion(self, p):
-        return ('?', p.formula)
+        return ['?', p.formula]
 
     @_('empty')
     def postcondicion(self, p):
-        pass
+        return []
 
     @_('BANG formula')
     def postcondicion(self, p):
-        return ('?', p.formula)
+        return ['?', p.formula]
 
     @_('empty')
     def chequeos(self, p):
@@ -204,11 +222,11 @@ class CalcParser(Parser):
 
     @_('chequeo chequeos')
     def chequeos(self, p):
-        return [p.chequeo] + p.chequeos
+        return p.chequeo + p.chequeos
 
     @_('CHECK formula')
     def chequeo(self, p):
-        return ('CHECK', p.formula)
+        return ['check', p.formula]
 
     @_('formulaImpOrAndNeg')
     def formula(self, p):
@@ -220,7 +238,7 @@ class CalcParser(Parser):
 
     @_('formulaOrAndNeg IMP formulaImpOrAndNeg')
     def formulaImpOrAndNeg(self, p):
-        return (p.formulaOrAndNeg, 'IMP', p.formulaImpOrAndNeg)
+        return ['imp', p.formulaOrAndNeg, p.formulaImpOrAndNeg]
 
     @_('formulaAndNeg')
     def formulaOrAndNeg(self, p):
@@ -228,7 +246,7 @@ class CalcParser(Parser):
 
     @_('formulaAndNeg OR formulaOrAndNeg')
     def formulaOrAndNeg(self, p):
-        return (p.formulaAndNeg, 'OR', p.formulaOrAndNeg)
+        return ['or', p.formulaAndNeg, p.formulaOrAndNeg]
 
     @_('formulaNeg')
     def formulaAndNeg(self, p):
@@ -236,7 +254,7 @@ class CalcParser(Parser):
 
     @_('formulaNeg AND formulaAndNeg')
     def formulaAndNeg(self, p):
-        return (p.formulaNeg, 'AND', p.formulaAndNeg)
+        return ['and', p.formulaNeg, p.formulaAndNeg]
 
     @_('formulaAtomica')
     def formulaNeg(self, p):
@@ -244,19 +262,19 @@ class CalcParser(Parser):
 
     @_('NOT formulaNeg')
     def formulaNeg(self, p):
-        return ('NOT', p.formulaNeg)
+        return ['not', p.formulaNeg]
 
     @_('TRUE')
     def formulaAtomica(self, p):
-        return 'True'
+        return ["true"]
 
     @_('FALSE')
     def formulaAtomica(self, p):
-        return 'False'
+        return ["false"]
 
     @_('LPAREN formula RPAREN')
     def formulaAtomica(self, p):
-        return ('(', p.formula, ')')
+        return ['(', p.formula, ')']
 
     @_('expresion')
     def formulaAtomica(self, p):
@@ -264,53 +282,59 @@ class CalcParser(Parser):
 
     @_('expresion EQ expresion')
     def formulaAtomica(self, p):
-        return (p[0], '==', p[1])
+        return ["equal", p[0], p[2]]
 
     @_('LOWERID')
     def expresion(self, p):
-        return p.LOWERID
+        return ["var", p.LOWERID]
 
     @_('LOWERID LPAREN listaExpresiones RPAREN')
     def expresion(self, p):
-        return (p.LOWERID, '(', p.listaExpresiones, ')')
+        return [p.LOWERID, '(', p.listaExpresiones, ')']
 
     @_('UPPERID')
     def expresion(self, p):
-        return p.UPPERID
+        return [p.UPPERID]
 
     @_('UPPERID LPAREN listaExpresiones RPAREN')
     def expresion(self, p):
-        return (p.UPPERID, '(', p.listaExpresiones, ')')
+        return [p.UPPERID, '(', p.listaExpresiones, ')']
 
     @_('empty')
     def listaExpresiones(self, p):
-        pass
+        return []
 
     @_('listaExpresionesNoVacia')
     def listaExpresiones(self, p):
-        return p.listaExpresionesNoVacia
+        return [p.listaExpresionesNoVacia]
 
     @_('expresion')
     def listaExpresionesNoVacia(self, p):
-        return p.expresion
+        return [p.expresion]
 
     @_('expresion COMMA listaExpresionesNoVacia')
     def listaExpresionesNoVacia(self, p):
-        return (p.expresion, ',', p.listaExpresionesNoVacia)
+        return [p.expresion, ',', p.listaExpresionesNoVacia]
 
     @_('')
     def empty(self, p):
         return []
 
 if __name__ == '__main__':
-    data = '''
-    fun f
-    fun g : x -> y
-    fun h
-        A -> B
-    fun i : x -> y
-        A -> B
-    '''
+
+    inputFile  = 'no_input.txt'
+    outputFile = 'no_output.txt'
+    if len(argv) >= 2:
+        inputFile = argv[1]
+    if len(argv) >= 3:
+        outputFile = argv[2]
+    print(inputFile)
+    print(outputFile)
+    with open(inputFile,'r') as inputContent:
+        data = inputContent.read()
     lexer = CalcLexer()
     parser = CalcParser()
-    print(parser.parse(lexer.tokenize(data)))
+    result = parser.parse(lexer.tokenize(data))
+    with open(outputFile,'w') as outputContent:
+        # outputContent.write(result)
+        pp.pprint(result)
