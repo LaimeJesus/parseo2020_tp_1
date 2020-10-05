@@ -2,7 +2,27 @@ from sly import Lexer, Parser
 from sys import argv, stdin
 from pprint import PrettyPrinter
 
-pp = PrettyPrinter(indent=4)
+pp = PrettyPrinter(indent=3)
+
+def custom_tab(s, size):
+    tab_str = ['   '] * size
+    tab_str = ''.join(tab_str)
+    return tab_str + s
+
+def custom_print(ls, tabs=0):
+    if not isinstance(ls, list):
+        # print('not list: ' + ls)
+        print(custom_tab(ls, tabs))
+    elif len(ls) == 0:
+        # print('empty list')
+        print(custom_tab("[]", tabs))
+    else:
+        curr_tab = tabs + 1
+        print(custom_tab("[", tabs))
+        # print('recursive list')
+        for elem in ls:
+            custom_print(elem, curr_tab)
+        print(custom_tab("]", tabs))
 
 class CalcLexer(Lexer):
 
@@ -146,7 +166,7 @@ class CalcParser(Parser):
 
     @_('parametro COMMA listaParametrosNoVacia')
     def listaParametrosNoVacia(self, p):
-        return [p.parametro, ',', p.listaParametrosNoVacia]
+        return [p.parametro] + p.listaParametrosNoVacia
 
     @_('UNDERSCORE')
     def parametro(self, p):
@@ -222,7 +242,7 @@ class CalcParser(Parser):
 
     @_('chequeo chequeos')
     def chequeos(self, p):
-        return p.chequeo + p.chequeos
+        return [p.chequeo] + p.chequeos
 
     @_('CHECK formula')
     def chequeo(self, p):
@@ -294,11 +314,11 @@ class CalcParser(Parser):
 
     @_('UPPERID')
     def expresion(self, p):
-        return [p.UPPERID]
+        return ["cons", p.UPPERID, []]
 
     @_('UPPERID LPAREN listaExpresiones RPAREN')
     def expresion(self, p):
-        return [p.UPPERID, '(', p.listaExpresiones, ')']
+        return ["cons", p.UPPERID, p.listaExpresiones]
 
     @_('empty')
     def listaExpresiones(self, p):
@@ -306,7 +326,7 @@ class CalcParser(Parser):
 
     @_('listaExpresionesNoVacia')
     def listaExpresiones(self, p):
-        return [p.listaExpresionesNoVacia]
+        return p.listaExpresionesNoVacia
 
     @_('expresion')
     def listaExpresionesNoVacia(self, p):
@@ -314,7 +334,7 @@ class CalcParser(Parser):
 
     @_('expresion COMMA listaExpresionesNoVacia')
     def listaExpresionesNoVacia(self, p):
-        return [p.expresion, ',', p.listaExpresionesNoVacia]
+        return [p.expresion] + p.listaExpresionesNoVacia
 
     @_('')
     def empty(self, p):
@@ -328,8 +348,6 @@ if __name__ == '__main__':
         inputFile = argv[1]
     if len(argv) >= 3:
         outputFile = argv[2]
-    print(inputFile)
-    print(outputFile)
     with open(inputFile,'r') as inputContent:
         data = inputContent.read()
     lexer = CalcLexer()
@@ -337,4 +355,5 @@ if __name__ == '__main__':
     result = parser.parse(lexer.tokenize(data))
     with open(outputFile,'w') as outputContent:
         # outputContent.write(result)
-        pp.pprint(result)
+        custom_print(result)
+        # pp.pprint(result)
