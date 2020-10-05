@@ -342,6 +342,10 @@ class CalcParser(Parser):
 
 if __name__ == '__main__':
 
+    '''
+    python parser.py tests_parser/test02.input > test02-custom-print.output
+    '''
+
     inputFile  = 'no_input.txt'
     outputFile = 'no_output.txt'
     if len(argv) >= 2:
