@@ -218,7 +218,7 @@ class CalcParser(Parser):
 
     @_('UPPERID LPAREN listaPatrones RPAREN')
     def patron(self, p):
-        return ['UPPERID', p.UPPERID, '(', p.listaPatrones, ')']
+        return ['UPPERID', p.UPPERID, p.listaPatrones]
 
     @_('empty')
     def precondicion(self, p):
@@ -294,7 +294,7 @@ class CalcParser(Parser):
 
     @_('LPAREN formula RPAREN')
     def formulaAtomica(self, p):
-        return ['(', p.formula, ')']
+        return [p.formula]
 
     @_('expresion')
     def formulaAtomica(self, p):
@@ -310,7 +310,7 @@ class CalcParser(Parser):
 
     @_('LOWERID LPAREN listaExpresiones RPAREN')
     def expresion(self, p):
-        return [p.LOWERID, '(', p.listaExpresiones, ')']
+        return ["app", p.LOWERID, p.listaExpresiones]
 
     @_('UPPERID')
     def expresion(self, p):
