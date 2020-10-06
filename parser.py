@@ -128,6 +128,12 @@ class CalcParser(Parser):
     def addPattern(self, rule, patron):
         pass
 
+    def isSingleExpression(self):
+        variables = ['hasAnd', 'hasOr', 'hasImp', 'hasEq']
+        return not any(
+            map(lambda x: hasattr(self, x), variables)
+        )
+
     @_('declaraciones chequeos')
     def program(self, p):
         return ['program', p.declaraciones, p.chequeos]
@@ -258,6 +264,7 @@ class CalcParser(Parser):
 
     @_('formulaOrAndNeg IMP formulaImpOrAndNeg')
     def formulaImpOrAndNeg(self, p):
+        self.hasImp = True
         return ['imp', p.formulaOrAndNeg, p.formulaImpOrAndNeg]
 
     @_('formulaAndNeg')
@@ -266,6 +273,7 @@ class CalcParser(Parser):
 
     @_('formulaAndNeg OR formulaOrAndNeg')
     def formulaOrAndNeg(self, p):
+        self.hasOr = True
         return ['or', p.formulaAndNeg, p.formulaOrAndNeg]
 
     @_('formulaNeg')
@@ -274,6 +282,7 @@ class CalcParser(Parser):
 
     @_('formulaNeg AND formulaAndNeg')
     def formulaAndNeg(self, p):
+        self.hasAnd = True
         return ['and', p.formulaNeg, p.formulaAndNeg]
 
     @_('formulaAtomica')
@@ -286,22 +295,35 @@ class CalcParser(Parser):
 
     @_('TRUE')
     def formulaAtomica(self, p):
+        if self.isSingleExpression():
+            print("is single expr - true")
         return ["true"]
 
     @_('FALSE')
     def formulaAtomica(self, p):
+        if self.isSingleExpression():
+            print("is single expr - false")
         return ["false"]
 
     @_('LPAREN formula RPAREN')
     def formulaAtomica(self, p):
+        if self.isSingleExpression():
+            print("is single expr p.form")
         return [p.formula]
 
     @_('expresion')
     def formulaAtomica(self, p):
+        if self.isSingleExpression():
+            return [
+                'equal',
+                p.expresion,
+                ['cons', 'True', []]
+            ]
         return p.expresion
 
     @_('expresion EQ expresion')
     def formulaAtomica(self, p):
+        self.hasEq = True
         return ["equal", p[0], p[2]]
 
     @_('LOWERID')
