@@ -150,7 +150,7 @@ class CalcParser(Parser):
 
     @_('COLON listaParametros ARROW parametro')
     def signatura(self, p):
-        return [':', p.listaParametros, '->', p.parametro]
+        return ['sig', p.listaParametros, p.parametro]
 
     @_('empty')
     def listaParametros(self, p):
@@ -206,19 +206,19 @@ class CalcParser(Parser):
 
     @_('UNDERSCORE')
     def patron(self, p):
-        return ['_', p.UNDERSCORE]
+        return ['pwild', p.UNDERSCORE]
 
     @_('LOWERID')
     def patron(self, p):
-        return ['LOWERID', p.LOWERID]
+        return ['pvar', p.LOWERID]
 
     @_('UPPERID')
     def patron(self, p):
-        return ['UPPERID', p.UPPERID]
+        return ['pcons', p.UPPERID]
 
     @_('UPPERID LPAREN listaPatrones RPAREN')
     def patron(self, p):
-        return ['UPPERID', p.UPPERID, p.listaPatrones]
+        return ['pcons', p.UPPERID, p.listaPatrones]
 
     @_('empty')
     def precondicion(self, p):
@@ -226,7 +226,7 @@ class CalcParser(Parser):
 
     @_('QUESTION formula')
     def precondicion(self, p):
-        return ['?', p.formula]
+        return ['pre', p.formula]
 
     @_('empty')
     def postcondicion(self, p):
@@ -234,7 +234,7 @@ class CalcParser(Parser):
 
     @_('BANG formula')
     def postcondicion(self, p):
-        return ['?', p.formula]
+        return ['post', p.formula]
 
     @_('empty')
     def chequeos(self, p):
