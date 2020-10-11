@@ -116,8 +116,9 @@ class CalcParser(Parser):
     start = 'program'
 
     def __init__(self):
-        self.current_context = None
-        self.state = {}
+        self.chequeos = []
+        self.currentCheck = -1
+        # self.resetCheckVariables()
 
     def addFunction(self, fun, params):
         pass
@@ -128,11 +129,53 @@ class CalcParser(Parser):
     def addPattern(self, rule, patron):
         pass
 
+    def getCheckVariables(self):
+        return ['hasAnd', 'hasOr', 'hasImp', 'hasEq']
+
+    def getCurrentCheck(self):
+        if self.currentCheck >= 0 and len(self.chequeos) > self.currentCheck:
+            return self.chequeos[self.currentCheck]
+        return None
+
+    def resetCheckVariables(self):
+        variables = self.getCheckVariables()
+        for var in variables:
+            self.addCheckVariable(var, False)
+
+    def addCheckVariable(self, var, val=True):
+        currentCheck = self.getCurrentCheck()
+        if currentCheck:
+            # print('------addCheckVariable--------')
+            # print(currentCheck)
+            currentCheck[var] = val
+            # print(currentCheck)
+
+    # recordar que chequeos es una lista de diccionarios
     def isSingleExpression(self):
-        variables = ['hasAnd', 'hasOr', 'hasImp', 'hasEq']
-        return not any(
-            map(lambda x: hasattr(self, x), variables)
-        )
+        variables = self.getCheckVariables()
+        check = self.getCurrentCheck()
+        if check is not None:
+            return not any(
+                map(
+                    lambda x: x in check and check[x],
+                    variables
+                )
+            )
+        return True
+
+    def addChequeo(self):
+        check_info = {
+            'hasAnd': False,
+            'hasOr': False,
+            'hasImp': False,
+            'hasEq': False
+        }
+        self.chequeos.append(check_info)
+        self.currentCheck = len(self.chequeos) - 1
+    
+    def addFormula(self, key):
+        check = self.getCurrentCheck()
+        check[key] = True
 
     @_('declaraciones chequeos')
     def program(self, p):
@@ -248,11 +291,17 @@ class CalcParser(Parser):
 
     @_('chequeo chequeos')
     def chequeos(self, p):
+        # self.addChequeo()
         return [p.chequeo] + p.chequeos
 
-    @_('CHECK formula')
+    @_('CHECK seenChequeo formula')
     def chequeo(self, p):
         return ['check', p.formula]
+
+    @_('')
+    def seenChequeo(self, p):
+        # print('seenChequeo')
+        self.addChequeo()
 
     @_('formulaImpOrAndNeg')
     def formula(self, p):
@@ -262,28 +311,40 @@ class CalcParser(Parser):
     def formulaImpOrAndNeg(self, p):
         return p.formulaOrAndNeg
 
-    @_('formulaOrAndNeg IMP formulaImpOrAndNeg')
+    @_('formulaOrAndNeg seenIMP IMP formulaImpOrAndNeg')
     def formulaImpOrAndNeg(self, p):
-        self.hasImp = True
         return ['imp', p.formulaOrAndNeg, p.formulaImpOrAndNeg]
+    
+    @_('')
+    def seenIMP(self, p):
+        self.addCheckVariable('hasImp')
+        return True
 
     @_('formulaAndNeg')
     def formulaOrAndNeg(self, p):
         return p.formulaAndNeg
 
-    @_('formulaAndNeg OR formulaOrAndNeg')
+    @_('formulaAndNeg seenOR OR formulaOrAndNeg')
     def formulaOrAndNeg(self, p):
-        self.hasOr = True
         return ['or', p.formulaAndNeg, p.formulaOrAndNeg]
+
+    @_('')
+    def seenOR(self, p):
+        self.addCheckVariable('hasOr')
+        return True
 
     @_('formulaNeg')
     def formulaAndNeg(self, p):
         return p.formulaNeg
 
-    @_('formulaNeg AND formulaAndNeg')
+    @_('formulaNeg seenAND AND formulaAndNeg')
     def formulaAndNeg(self, p):
-        self.hasAnd = True
         return ['and', p.formulaNeg, p.formulaAndNeg]
+
+    @_('')
+    def seenAND(self, p):
+        self.addCheckVariable('hasAnd')
+        return True
 
     @_('formulaAtomica')
     def formulaNeg(self, p):
@@ -314,6 +375,7 @@ class CalcParser(Parser):
     @_('expresion')
     def formulaAtomica(self, p):
         if self.isSingleExpression():
+            # print('is single exp p.expresion')
             return [
                 'equal',
                 p.expresion,
@@ -321,10 +383,14 @@ class CalcParser(Parser):
             ]
         return p.expresion
 
-    @_('expresion EQ expresion')
+    @_('expresion seenEQ EQ expresion')
     def formulaAtomica(self, p):
-        self.hasEq = True
-        return ["equal", p[0], p[2]]
+        return ["equal", p[0], p[3]]
+
+    @_('')
+    def seenEQ(self, p):
+        self.addCheckVariable('hasEq')
+        return True
 
     @_('LOWERID')
     def expresion(self, p):
@@ -378,7 +444,11 @@ if __name__ == '__main__':
         data = inputContent.read()
     lexer = CalcLexer()
     parser = CalcParser()
-    result = parser.parse(lexer.tokenize(data))
+    tokenized = lexer.tokenize(data)
+    # print('----tokenized---')
+    # for token in tokenized:
+    #     print(token)
+    result = parser.parse(tokenized)
     with open(outputFile,'w') as outputContent:
         # outputContent.write(result)
         custom_print(result)
