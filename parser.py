@@ -159,6 +159,8 @@ class CalcParser(Parser):
     def isSingleExpression(self):
         variables = self.getCheckVariables()
         check = self.getCurrentCheck()
+        # print('----------is-single-expression-------')
+        # print(check)
         if check is not None:
             return not any(
                 map(
@@ -341,14 +343,14 @@ class CalcParser(Parser):
     def formulaAndNeg(self, p):
         return p.formulaNeg
 
-    @_('formulaNeg seenAND AND formulaAndNeg')
+    @_('formulaNeg AND formulaAndNeg')
     def formulaAndNeg(self, p):
         return ['and', p.formulaNeg, p.formulaAndNeg]
 
-    @_('')
-    def seenAND(self, p):
-        self.addCheckVariable('hasAnd')
-        return True
+    # @_('')
+    # def seenAND(self, p):
+    #     self.addCheckVariable('hasAnd')
+    #     return True
 
     @_('formulaAtomica')
     def formulaNeg(self, p):
@@ -379,11 +381,15 @@ class CalcParser(Parser):
     @_('expresion')
     def formulaAtomica(self, p):
         if self.isSingleExpression():
+            # print('----is-single-----')
+            # print(p.expresion)
             return [
                 'equal',
                 p.expresion,
                 ['cons', 'True', []]
             ]
+        # print('----is-not-single-----')
+        # print(p.expresion)
         return p.expresion
 
     @_('expresion seenEQ EQ expresion')
