@@ -35,7 +35,7 @@ class AvalanchaLexer(Lexer):
     COMMA       = r','
     LPAREN      = r'\('
     RPAREN      = r'\)'
-    IMP         = r'->'
+    IMP         = r'imp'
     OR          = r'or'
     AND         = r'and'
     NOT         = r'not'
@@ -149,7 +149,7 @@ class AvalanchaParser(Parser):
 
     @_('empty')
     def signatura(self, p):
-        return []
+        return ['sig', [], '_']
 
     @_('COLON listaParametros ARROW parametro')
     def signatura(self, p):
@@ -173,11 +173,11 @@ class AvalanchaParser(Parser):
 
     @_('UNDERSCORE')
     def parametro(self, p):
-        return ['_', p.UNDERSCORE]
+        return '_'
 
     @_('LOWERID')
     def parametro(self, p):
-        return ['LOWERID', p.LOWERID]
+        return p.LOWERID
 
     @_('empty')
     def reglas(self, p):
@@ -225,7 +225,7 @@ class AvalanchaParser(Parser):
 
     @_('empty')
     def precondicion(self, p):
-        return []
+        return ['pre', ['true']]
 
     @_('QUESTION formula')
     def precondicion(self, p):
@@ -233,7 +233,7 @@ class AvalanchaParser(Parser):
 
     @_('empty')
     def postcondicion(self, p):
-        return []
+        return ['post', ['true']]
 
     @_('BANG formula')
     def postcondicion(self, p):
@@ -264,14 +264,14 @@ class AvalanchaParser(Parser):
     def formulaImpOrAndNeg(self, p):
         return p.formulaOrAndNeg
 
-    @_('formulaOrAndNeg seenIMP IMP formulaImpOrAndNeg')
+    @_('formulaOrAndNeg IMP formulaImpOrAndNeg')
     def formulaImpOrAndNeg(self, p):
         return ['imp', p.formulaOrAndNeg, p.formulaImpOrAndNeg]
     
-    @_('')
-    def seenIMP(self, p):
-        self.addCheckVariable('hasImp')
-        return True
+    # @_('')
+    # def seenIMP(self, p):
+    #     self.addCheckVariable('hasImp')
+    #     return True
 
     @_('formulaAndNeg')
     def formulaOrAndNeg(self, p):
