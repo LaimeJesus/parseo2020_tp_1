@@ -7,7 +7,9 @@ pp = PrettyPrinter(indent=3)
 def custom_tab(s, size):
     tab_str = ['   '] * size
     tab_str = ''.join(tab_str)
-    return tab_str + s
+    if s is not None:
+        return tab_str + s
+    return tab_str
 
 def custom_print(ls, tabs=0):
     if not isinstance(ls, list):
@@ -49,15 +51,14 @@ class CalcLexer(Lexer):
         BANG,
         EQ
     }
-    ignore = ' \t'
 
     # Tokens
     FUN         = r'fun'
     CHECK       = r'check'
     ARROW       = r'->'
     COMMA       = r','
-    LPAREN      = r'\(+'
-    RPAREN      = r'\)+'
+    LPAREN      = r'\('
+    RPAREN      = r'\)'
     IMP         = r'->'
     OR          = r'or'
     AND         = r'and'
@@ -75,8 +76,12 @@ class CalcLexer(Lexer):
 
 
     # Ignored pattern
+    ignore_whitespaces = '\s+'
+    ignore_tabs = '\t+'
     ignore_newline = r'\n+'
+    ignore_carry = r'\r+'
     ignore_comment = r'--.*'
+
     # ignore_tab     = r'\s*'
 
     # Extra action for newlines
@@ -112,7 +117,7 @@ info_checks = {
 class CalcParser(Parser):
     # Get the token list from the lexer (required)
     tokens = CalcLexer.tokens
-    #debugfile = 'parser.out'
+    # debugfile = 'parser.out'
     start = 'program'
 
     def __init__(self):
