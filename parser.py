@@ -50,7 +50,7 @@ class AvalanchaLexer(Lexer):
     UPPERID     = r'[A-Z][_a-zA-Z0-9]*'
 
     # Ignored pattern
-    ignore_whitespaces = '\s+'
+    ignore_whitespaces = '\s'
     ignore_tabs = '\t+'
     ignore_newline = r'\n+'
     ignore_carry = r'\r+'
@@ -277,14 +277,14 @@ class AvalanchaParser(Parser):
     def formulaOrAndNeg(self, p):
         return p.formulaAndNeg
 
-    @_('formulaAndNeg seenOR OR formulaOrAndNeg')
+    @_('formulaAndNeg OR formulaOrAndNeg')
     def formulaOrAndNeg(self, p):
         return ['or', p.formulaAndNeg, p.formulaOrAndNeg]
 
-    @_('')
-    def seenOR(self, p):
-        self.addCheckVariable('hasOr')
-        return True
+    # @_('')
+    # def seenOR(self, p):
+    #     self.addCheckVariable('hasOr')
+    #     return True
 
     @_('formulaNeg')
     def formulaAndNeg(self, p):
