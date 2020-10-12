@@ -1,32 +1,8 @@
 from sly import Lexer, Parser
 from sys import argv, stdin
-from pprint import PrettyPrinter
+from json import dumps
 
-pp = PrettyPrinter(indent=3)
-
-def custom_tab(s, size):
-    tab_str = ['   '] * size
-    tab_str = ''.join(tab_str)
-    if s is not None:
-        return tab_str + s
-    return tab_str
-
-def custom_print(ls, tabs=0):
-    if not isinstance(ls, list):
-        # print('not list: ' + ls)
-        print(custom_tab(ls, tabs))
-    elif len(ls) == 0:
-        # print('empty list')
-        print(custom_tab("[]", tabs))
-    else:
-        curr_tab = tabs + 1
-        print(custom_tab("[", tabs))
-        # print('recursive list')
-        for elem in ls:
-            custom_print(elem, curr_tab)
-        print(custom_tab("]", tabs))
-
-class CalcLexer(Lexer):
+class AvalanchaLexer(Lexer):
 
     # literals = {}
 
@@ -73,8 +49,6 @@ class CalcLexer(Lexer):
     LOWERID     = r'[a-z][_a-zA-Z0-9]*'
     UPPERID     = r'[A-Z][_a-zA-Z0-9]*'
 
-
-
     # Ignored pattern
     ignore_whitespaces = '\s+'
     ignore_tabs = '\t+'
@@ -92,31 +66,9 @@ class CalcLexer(Lexer):
         print("Illegal character '%s'" % t.value[0])
         self.index += 1
 
-'''
-Estructura para modelar las restricciones
-
-curr_context = i
-
-info_checks = {
-    i: {
-        parametros: 1,
-        signatura: [variables],
-        patrones: [
-            patron: {
-                varX: True,
-                varX
-            }
-        ]
-    }
-}
-
-
-'''
-
-
-class CalcParser(Parser):
+class AvalanchaParser(Parser):
     # Get the token list from the lexer (required)
-    tokens = CalcLexer.tokens
+    tokens = AvalanchaLexer.tokens
     # debugfile = 'parser.out'
     start = 'program'
 
@@ -150,17 +102,12 @@ class CalcParser(Parser):
     def addCheckVariable(self, var, val=True):
         currentCheck = self.getCurrentCheck()
         if currentCheck:
-            # print('------addCheckVariable--------')
-            # print(currentCheck)
             currentCheck[var] = val
-            # print(currentCheck)
 
     # recordar que chequeos es una lista de diccionarios
     def isSingleExpression(self):
         variables = self.getCheckVariables()
         check = self.getCurrentCheck()
-        # print('----------is-single-expression-------')
-        # print(check)
         if check is not None:
             return not any(
                 map(
@@ -381,15 +328,11 @@ class CalcParser(Parser):
     @_('expresion')
     def formulaAtomica(self, p):
         if self.isSingleExpression():
-            # print('----is-single-----')
-            # print(p.expresion)
             return [
                 'equal',
                 p.expresion,
                 ['cons', 'True', []]
             ]
-        # print('----is-not-single-----')
-        # print(p.expresion)
         return p.expresion
 
     @_('expresion seenEQ EQ expresion')
@@ -451,8 +394,9 @@ if __name__ == '__main__':
         outputFile = argv[2]
     with open(inputFile,'r') as inputContent:
         data = inputContent.read()
-    lexer = CalcLexer()
-    parser = CalcParser()
+    lexer = AvalanchaLexer()
+    parser = AvalanchaParser()
     tokenized = lexer.tokenize(data)
     result = parser.parse(tokenized)
-    custom_print(result)
+    jsonResult = dumps(result, indent=3)
+    print(jsonResult)
