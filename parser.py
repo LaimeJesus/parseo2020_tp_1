@@ -270,7 +270,6 @@ class AvalanchaParser(Parser):
 
     @_('')
     def seenChequeo(self, p):
-        # print('seenChequeo')
         self.addChequeo()
 
     @_('formulaImpOrAndNeg')
@@ -281,40 +280,25 @@ class AvalanchaParser(Parser):
     def formulaImpOrAndNeg(self, p):
         return p.formulaOrAndNeg
 
-    @_('formulaOrAndNeg seenIMP IMP formulaImpOrAndNeg')
+    @_('formulaOrAndNeg IMP formulaImpOrAndNeg')
     def formulaImpOrAndNeg(self, p):
         return ['imp', p.formulaOrAndNeg, p.formulaImpOrAndNeg]
-    
-    @_('')
-    def seenIMP(self, p):
-        self.addCheckVariable('hasImp')
-        return True
 
     @_('formulaAndNeg')
     def formulaOrAndNeg(self, p):
         return p.formulaAndNeg
 
-    @_('formulaAndNeg seenOR OR formulaOrAndNeg')
+    @_('formulaAndNeg OR formulaOrAndNeg')
     def formulaOrAndNeg(self, p):
         return ['or', p.formulaAndNeg, p.formulaOrAndNeg]
-
-    @_('')
-    def seenOR(self, p):
-        self.addCheckVariable('hasOr')
-        return True
 
     @_('formulaNeg')
     def formulaAndNeg(self, p):
         return p.formulaNeg
 
-    @_('formulaNeg seenAND AND formulaAndNeg')
+    @_('formulaNeg AND formulaAndNeg')
     def formulaAndNeg(self, p):
         return ['and', p.formulaNeg, p.formulaAndNeg]
-
-    @_('')
-    def seenAND(self, p):
-        self.addCheckVariable('hasAnd')
-        return True
 
     @_('formulaAtomica')
     def formulaNeg(self, p):
@@ -326,20 +310,14 @@ class AvalanchaParser(Parser):
 
     @_('TRUE')
     def formulaAtomica(self, p):
-        # if self.isSingleExpression():
-        #     print("is single expr - true")
         return ["true"]
 
     @_('FALSE')
     def formulaAtomica(self, p):
-        # if self.isSingleExpression():
-        #     print("is single expr - false")
         return ["false"]
 
     @_('LPAREN formula RPAREN')
     def formulaAtomica(self, p):
-        # if self.isSingleExpression():
-            # print("is single expr p.form")
         return p.formula
 
     @_('expresion')
