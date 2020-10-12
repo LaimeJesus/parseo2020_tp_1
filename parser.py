@@ -56,8 +56,8 @@ class CalcLexer(Lexer):
     CHECK       = r'check'
     ARROW       = r'->'
     COMMA       = r','
-    LPAREN      = r'\('
-    RPAREN      = r'\)'
+    LPAREN      = r'\(+'
+    RPAREN      = r'\)+'
     IMP         = r'->'
     OR          = r'or'
     AND         = r'and'
@@ -291,7 +291,6 @@ class CalcParser(Parser):
 
     @_('chequeo chequeos')
     def chequeos(self, p):
-        # self.addChequeo()
         return [p.chequeo] + p.chequeos
 
     @_('CHECK seenChequeo formula')
@@ -356,26 +355,25 @@ class CalcParser(Parser):
 
     @_('TRUE')
     def formulaAtomica(self, p):
-        if self.isSingleExpression():
-            print("is single expr - true")
+        # if self.isSingleExpression():
+        #     print("is single expr - true")
         return ["true"]
 
     @_('FALSE')
     def formulaAtomica(self, p):
-        if self.isSingleExpression():
-            print("is single expr - false")
+        # if self.isSingleExpression():
+        #     print("is single expr - false")
         return ["false"]
 
     @_('LPAREN formula RPAREN')
     def formulaAtomica(self, p):
-        if self.isSingleExpression():
-            print("is single expr p.form")
-        return [p.formula]
+        # if self.isSingleExpression():
+            # print("is single expr p.form")
+        return p.formula
 
     @_('expresion')
     def formulaAtomica(self, p):
         if self.isSingleExpression():
-            # print('is single exp p.expresion')
             return [
                 'equal',
                 p.expresion,
@@ -418,11 +416,11 @@ class CalcParser(Parser):
 
     @_('expresion')
     def listaExpresionesNoVacia(self, p):
-        return [p.expresion]
+        return p.expresion
 
     @_('expresion COMMA listaExpresionesNoVacia')
     def listaExpresionesNoVacia(self, p):
-        return [p.expresion] + p.listaExpresionesNoVacia
+        return p.expresion + p.listaExpresionesNoVacia
 
     @_('')
     def empty(self, p):
@@ -445,11 +443,5 @@ if __name__ == '__main__':
     lexer = CalcLexer()
     parser = CalcParser()
     tokenized = lexer.tokenize(data)
-    # print('----tokenized---')
-    # for token in tokenized:
-    #     print(token)
     result = parser.parse(tokenized)
-    with open(outputFile,'w') as outputContent:
-        # outputContent.write(result)
-        custom_print(result)
-        # pp.pprint(result)
+    custom_print(result)
