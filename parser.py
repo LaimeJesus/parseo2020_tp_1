@@ -143,16 +143,31 @@ class AvalanchaParser(Parser):
     def declaraciones(self, p):
         return []
 
-    @_('FUN LOWERID signatura precondicion postcondicion reglas')
+    @_('FUN LOWERID prevReglas signatura precondicion postcondicion reglas seenReglas')
     def declaracion(self, p):
-        return ['fun', p.LOWERID, p.signatura, p.precondicion, p.postcondicion, p.reglas]
+        if self.isEmptySignature:
+            signatura = p.seenReglas
+        else:
+            signatura = p.signatura
+        return ['fun', p.LOWERID, signatura, p.precondicion, p.postcondicion, p.reglas]
+
+    @_('')
+    def prevReglas(self, p):
+        self.arity = 0
+
+    @_('')
+    def seenReglas(self, p):
+        comodines = ['_'] * self.arity
+        return ['sig', comodines, '_']
 
     @_('empty')
     def signatura(self, p):
+        self.isEmptySignature = True
         return ['sig', [], '_']
 
     @_('COLON listaParametros ARROW parametro')
     def signatura(self, p):
+        self.isEmptySignature = False
         return ['sig', p.listaParametros, p.parametro]
 
     @_('empty')
@@ -189,7 +204,9 @@ class AvalanchaParser(Parser):
 
     @_('listaPatrones ARROW expresion')
     def regla(self, p):
-        return [p.listaPatrones, '->', p.expresion]
+        size = len(p.listaPatrones)
+        self.arity = max(self.arity, size)
+        return ['rule', p.listaPatrones,  p.expresion]
 
     @_('empty')
     def listaPatrones(self, p):
@@ -197,7 +214,7 @@ class AvalanchaParser(Parser):
 
     @_('listaPatronesNoVacia')
     def listaPatrones(self, p):
-        return [p.listaPatronesNoVacia]
+        return p.listaPatronesNoVacia
 
     @_('patron')
     def listaPatronesNoVacia(self, p):
@@ -205,11 +222,11 @@ class AvalanchaParser(Parser):
 
     @_('patron COMMA listaPatronesNoVacia')
     def listaPatronesNoVacia(self, p):
-        return [p.patron, ',', p.listaParametrosNoVacia]
+        return [p.patron] + p.listaPatronesNoVacia
 
     @_('UNDERSCORE')
     def patron(self, p):
-        return ['pwild', p.UNDERSCORE]
+        return ['pwild']
 
     @_('LOWERID')
     def patron(self, p):
@@ -217,7 +234,7 @@ class AvalanchaParser(Parser):
 
     @_('UPPERID')
     def patron(self, p):
-        return ['pcons', p.UPPERID]
+        return ['pcons', p.UPPERID, []]
 
     @_('UPPERID LPAREN listaPatrones RPAREN')
     def patron(self, p):
@@ -264,40 +281,40 @@ class AvalanchaParser(Parser):
     def formulaImpOrAndNeg(self, p):
         return p.formulaOrAndNeg
 
-    @_('formulaOrAndNeg IMP formulaImpOrAndNeg')
+    @_('formulaOrAndNeg seenIMP IMP formulaImpOrAndNeg')
     def formulaImpOrAndNeg(self, p):
         return ['imp', p.formulaOrAndNeg, p.formulaImpOrAndNeg]
     
-    # @_('')
-    # def seenIMP(self, p):
-    #     self.addCheckVariable('hasImp')
-    #     return True
+    @_('')
+    def seenIMP(self, p):
+        self.addCheckVariable('hasImp')
+        return True
 
     @_('formulaAndNeg')
     def formulaOrAndNeg(self, p):
         return p.formulaAndNeg
 
-    @_('formulaAndNeg OR formulaOrAndNeg')
+    @_('formulaAndNeg seenOR OR formulaOrAndNeg')
     def formulaOrAndNeg(self, p):
         return ['or', p.formulaAndNeg, p.formulaOrAndNeg]
 
-    # @_('')
-    # def seenOR(self, p):
-    #     self.addCheckVariable('hasOr')
-    #     return True
+    @_('')
+    def seenOR(self, p):
+        self.addCheckVariable('hasOr')
+        return True
 
     @_('formulaNeg')
     def formulaAndNeg(self, p):
         return p.formulaNeg
 
-    @_('formulaNeg AND formulaAndNeg')
+    @_('formulaNeg seenAND AND formulaAndNeg')
     def formulaAndNeg(self, p):
         return ['and', p.formulaNeg, p.formulaAndNeg]
 
-    # @_('')
-    # def seenAND(self, p):
-    #     self.addCheckVariable('hasAnd')
-    #     return True
+    @_('')
+    def seenAND(self, p):
+        self.addCheckVariable('hasAnd')
+        return True
 
     @_('formulaAtomica')
     def formulaNeg(self, p):
