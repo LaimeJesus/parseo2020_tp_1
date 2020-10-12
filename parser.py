@@ -370,11 +370,11 @@ class AvalanchaParser(Parser):
 
     @_('expresion')
     def listaExpresionesNoVacia(self, p):
-        return p.expresion
+        return [p.expresion]
 
     @_('expresion COMMA listaExpresionesNoVacia')
     def listaExpresionesNoVacia(self, p):
-        return p.expresion + p.listaExpresionesNoVacia
+        return [p.expresion] + p.listaExpresionesNoVacia
 
     @_('')
     def empty(self, p):
