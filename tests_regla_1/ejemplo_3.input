@@ -1,0 +1,6 @@
+fun f
+fun g : x -> y
+fun h
+    A -> B
+fun i : x -> y
+    A -> B
