@@ -58,6 +58,12 @@ class AvalanchaLexer(Lexer):
 
     # ignore_tab     = r'\s*'
 
+    # revisar si es necesario definir la precedencia explicitamente
+    # precedence = (
+    #     ('left', COMMA),
+    #     ('left', ARROW)
+    # )
+
     # Extra action for newlines
     def ignore_newline(self, t):
         self.lineno += t.value.count('\n') # len(t.value)
@@ -154,10 +160,15 @@ class AvalanchaParser(Parser):
     @_('')
     def prevReglas(self, p):
         self.arity = 0
+        self.arities = []
 
     @_('')
     def seenReglas(self, p):
         comodines = ['_'] * self.arity
+        for a in self.arities:
+            for b in self.arities:
+                if a != b:
+                    raise Exception("Diferente Aridad")
         return ['sig', comodines, '_']
 
     @_('empty')
@@ -167,6 +178,8 @@ class AvalanchaParser(Parser):
 
     @_('COLON listaParametros ARROW parametro')
     def signatura(self, p):
+        self.arity = len(p.listaParametros)
+        self.arities = [self.arity]
         self.isEmptySignature = False
         return ['sig', p.listaParametros, p.parametro]
 
@@ -205,6 +218,7 @@ class AvalanchaParser(Parser):
     @_('listaPatrones ARROW expresion')
     def regla(self, p):
         size = len(p.listaPatrones)
+        self.arities.append(size)
         self.arity = max(self.arity, size)
         return ['rule', p.listaPatrones,  p.expresion]
 
