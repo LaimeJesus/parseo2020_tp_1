@@ -137,11 +137,11 @@ class AvalanchaParser(Parser):
         check = self.getCurrentCheck()
         check[key] = True
 
-    @_('declaraciones chequeos')
+    @_('prevDeclaraciones declaraciones postDeclaraciones chequeos')
     def program(self, p):
         return ['program', p.declaraciones, p.chequeos]
 
-    @_('prevDeclaraciones declaraciones declaracion postDeclaraciones')
+    @_('declaraciones declaracion')
     def declaraciones(self, p):
         return p.declaraciones + [p.declaracion]
 
@@ -151,10 +151,12 @@ class AvalanchaParser(Parser):
 
     @_('')
     def postDeclaraciones(self,p):
+        metodos = set()
         for a in self.nombreMetodo:
-            for b in self.nombreMetodo:
-                if a != b:
-                    raise Exception("Mismo Nombre")
+            if a not in metodos:
+                metodos.add(a)
+            else:
+                raise Exception("Mismo Nombre")
 
     @_('empty')
     def declaraciones(self, p):
@@ -227,12 +229,24 @@ class AvalanchaParser(Parser):
     def reglas(self, p):
         return [p.regla] + p.reglas
 
+    # @_('prevPatrones listaPatrones postPatrones ARROW expresion')
     @_('listaPatrones ARROW expresion')
     def regla(self, p):
         size = len(p.listaPatrones)
         self.arities.append(size)
         self.arity = max(self.arity, size)
         return ['rule', p.listaPatrones,  p.expresion]
+
+    # @_('')
+    # def prevPatrones(self, p):
+    #     self.variables = []
+
+    # @_('')
+    # def postPatrones(self, p):
+    #     for a in self.variables:
+    #         for b in self.variables:
+    #             if a == b:
+    #                 raise Exception('Hay variables repetidas')
 
     @_('empty')
     def listaPatrones(self, p):
@@ -256,6 +270,7 @@ class AvalanchaParser(Parser):
 
     @_('LOWERID')
     def patron(self, p):
+        self.variables.append(p.LOWERID)
         return ['pvar', p.LOWERID]
 
     @_('UPPERID')
