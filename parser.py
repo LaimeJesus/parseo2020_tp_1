@@ -141,9 +141,20 @@ class AvalanchaParser(Parser):
     def program(self, p):
         return ['program', p.declaraciones, p.chequeos]
 
-    @_('declaraciones declaracion')
+    @_('prevDeclaraciones declaraciones declaracion postDeclaraciones')
     def declaraciones(self, p):
         return p.declaraciones + [p.declaracion]
+
+    @_('')
+    def prevDeclaraciones(self, p):
+        self.nombreMetodo = []
+
+    @_('')
+    def postDeclaraciones(self,p):
+        for a in self.nombreMetodo:
+            for b in self.nombreMetodo:
+                if a != b:
+                    raise Exception("Mismo Nombre")
 
     @_('empty')
     def declaraciones(self, p):
@@ -151,6 +162,7 @@ class AvalanchaParser(Parser):
 
     @_('FUN LOWERID prevReglas signatura precondicion postcondicion reglas seenReglas')
     def declaracion(self, p):
+        self.nombreMetodo.append(p.LOWERID)
         if self.isEmptySignature:
             signatura = p.seenReglas
         else:

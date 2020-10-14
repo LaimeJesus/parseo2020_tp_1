@@ -1,0 +1,2 @@
+fun f A -> B
+fun f C -> D
