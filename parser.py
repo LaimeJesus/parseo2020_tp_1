@@ -162,7 +162,7 @@ class AvalanchaParser(Parser):
     def declaraciones(self, p):
         return []
 
-    @_('FUN LOWERID prevReglas signatura precondicion postcondicion reglas seenReglas')
+    @_('FUN LOWERID prevReglas prevSignatura signatura postSignatura precondicion postcondicion reglas seenReglas')
     def declaracion(self, p):
         self.nombreMetodo.append(p.LOWERID)
         if self.isEmptySignature:
@@ -170,6 +170,19 @@ class AvalanchaParser(Parser):
         else:
             signatura = p.signatura
         return ['fun', p.LOWERID, signatura, p.precondicion, p.postcondicion, p.reglas]
+
+    @_('')
+    def prevSignatura(self, p):
+        self.signatureVariables = []
+
+    @_('')
+    def postSignatura(self, p):
+        variables = set()
+        for a in self.signatureVariables:
+            if a not in variables:
+                variables.add(a)
+            else:
+                raise Exception('Hay variables en signatura repetidas')
 
     @_('')
     def prevReglas(self, p):
@@ -219,6 +232,7 @@ class AvalanchaParser(Parser):
 
     @_('LOWERID')
     def parametro(self, p):
+        self.signatureVariables.append(p.LOWERID)
         return p.LOWERID
 
     @_('empty')
