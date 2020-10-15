@@ -229,24 +229,25 @@ class AvalanchaParser(Parser):
     def reglas(self, p):
         return [p.regla] + p.reglas
 
-    # @_('prevPatrones listaPatrones postPatrones ARROW expresion')
-    @_('listaPatrones ARROW expresion')
+    @_('prevPatrones listaPatrones postPatrones ARROW expresion')
     def regla(self, p):
         size = len(p.listaPatrones)
         self.arities.append(size)
         self.arity = max(self.arity, size)
         return ['rule', p.listaPatrones,  p.expresion]
 
-    # @_('')
-    # def prevPatrones(self, p):
-    #     self.variables = []
+    @_('')
+    def prevPatrones(self, p):
+        self.variables = []
 
-    # @_('')
-    # def postPatrones(self, p):
-    #     for a in self.variables:
-    #         for b in self.variables:
-    #             if a == b:
-    #                 raise Exception('Hay variables repetidas')
+    @_('')
+    def postPatrones(self, p):
+        variables = set()
+        for a in self.variables:
+            if a not in variables:
+                variables.add(a)
+            else:
+                raise Exception('Hay variables repetidas')
 
     @_('empty')
     def listaPatrones(self, p):
