@@ -81,17 +81,7 @@ class AvalanchaParser(Parser):
     def __init__(self):
         self.chequeos = []
         self.currentCheck = -1
-        # self.resetCheckVariables()
-
-    def addFunction(self, fun, params):
-        pass
     
-    def addSignature(self, fun):
-        pass
-
-    def addPattern(self, rule, patron):
-        pass
-
     def getCheckVariables(self):
         return ['hasAnd', 'hasOr', 'hasImp', 'hasEq']
 
@@ -445,9 +435,13 @@ if __name__ == '__main__':
         outputFile = argv[2]
     with open(inputFile,'r') as inputContent:
         data = inputContent.read()
-    lexer = AvalanchaLexer()
-    parser = AvalanchaParser()
-    tokenized = lexer.tokenize(data)
-    result = parser.parse(tokenized)
-    jsonResult = dumps(result, indent=3)
-    print(jsonResult)
+
+    try:
+        lexer = AvalanchaLexer()
+        parser = AvalanchaParser()
+        tokenized = lexer.tokenize(data)
+        result = parser.parse(tokenized)
+        jsonResult = dumps(result, indent=3)
+        print(jsonResult)
+    except Exception as e:
+        print(e)
