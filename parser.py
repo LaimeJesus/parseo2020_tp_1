@@ -56,14 +56,6 @@ class AvalanchaLexer(Lexer):
     ignore_carry = r'\r+'
     ignore_comment = r'--.*'
 
-    # ignore_tab     = r'\s*'
-
-    # revisar si es necesario definir la precedencia explicitamente
-    # precedence = (
-    #     ('left', COMMA),
-    #     ('left', ARROW)
-    # )
-
     # Extra action for newlines
     def ignore_newline(self, t):
         self.lineno += t.value.count('\n') # len(t.value)
@@ -77,55 +69,6 @@ class AvalanchaParser(Parser):
     tokens = AvalanchaLexer.tokens
     # debugfile = 'parser.out'
     start = 'program'
-
-    def __init__(self):
-        self.chequeos = []
-        self.currentCheck = -1
-    
-    def getCheckVariables(self):
-        return ['hasAnd', 'hasOr', 'hasImp', 'hasEq']
-
-    def getCurrentCheck(self):
-        if self.currentCheck >= 0 and len(self.chequeos) > self.currentCheck:
-            return self.chequeos[self.currentCheck]
-        return None
-
-    def resetCheckVariables(self):
-        variables = self.getCheckVariables()
-        for var in variables:
-            self.addCheckVariable(var, False)
-
-    def addCheckVariable(self, var, val=True):
-        currentCheck = self.getCurrentCheck()
-        if currentCheck:
-            currentCheck[var] = val
-
-    # recordar que chequeos es una lista de diccionarios
-    def isSingleExpression(self):
-        variables = self.getCheckVariables()
-        check = self.getCurrentCheck()
-        if check is not None:
-            return not any(
-                map(
-                    lambda x: x in check and check[x],
-                    variables
-                )
-            )
-        return True
-
-    def addChequeo(self):
-        check_info = {
-            'hasAnd': False,
-            'hasOr': False,
-            'hasImp': False,
-            'hasEq': False
-        }
-        self.chequeos.append(check_info)
-        self.currentCheck = len(self.chequeos) - 1
-    
-    def addFormula(self, key):
-        check = self.getCurrentCheck()
-        check[key] = True
 
     @_('prevDeclaraciones declaraciones postDeclaraciones chequeos')
     def program(self, p):
@@ -290,7 +233,7 @@ class AvalanchaParser(Parser):
     def precondicion(self, p):
         return ['pre', ['true']]
 
-    @_('QUESTION formula')
+    @_('QUESTION seenChequeo formula')
     def precondicion(self, p):
         return ['pre', p.formula]
 
@@ -298,7 +241,7 @@ class AvalanchaParser(Parser):
     def postcondicion(self, p):
         return ['post', ['true']]
 
-    @_('BANG formula')
+    @_('BANG seenChequeo formula')
     def postcondicion(self, p):
         return ['post', p.formula]
 
@@ -316,7 +259,7 @@ class AvalanchaParser(Parser):
 
     @_('')
     def seenChequeo(self, p):
-        self.addChequeo()
+        self.isSingleExpression = True
 
     @_('formulaImpOrAndNeg')
     def formula(self, p):
@@ -356,10 +299,12 @@ class AvalanchaParser(Parser):
 
     @_('TRUE')
     def formulaAtomica(self, p):
+        self.isSingleExpression = False
         return ["true"]
 
     @_('FALSE')
     def formulaAtomica(self, p):
+        self.isSingleExpression = False
         return ["false"]
 
     @_('LPAREN formula RPAREN')
@@ -368,7 +313,7 @@ class AvalanchaParser(Parser):
 
     @_('expresion')
     def formulaAtomica(self, p):
-        if self.isSingleExpression():
+        if self.isSingleExpression:
             return [
                 'equal',
                 p.expresion,
@@ -376,14 +321,10 @@ class AvalanchaParser(Parser):
             ]
         return p.expresion
 
-    @_('expresion seenEQ EQ expresion')
+    @_('expresion EQ expresion')
     def formulaAtomica(self, p):
-        return ["equal", p[0], p[3]]
-
-    @_('')
-    def seenEQ(self, p):
-        self.addCheckVariable('hasEq')
-        return True
+        self.isSingleExpression = False
+        return ["equal", p[0], p[2]]
 
     @_('LOWERID')
     def expresion(self, p):
@@ -428,11 +369,8 @@ if __name__ == '__main__':
     '''
 
     inputFile  = 'no_input.txt'
-    outputFile = 'no_output.txt'
     if len(argv) >= 2:
         inputFile = argv[1]
-    if len(argv) >= 3:
-        outputFile = argv[2]
     with open(inputFile,'r') as inputContent:
         data = inputContent.read()
 
