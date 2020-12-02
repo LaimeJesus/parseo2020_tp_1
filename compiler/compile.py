@@ -2,6 +2,9 @@ import sys
 import json
 import pdb
 from string import Template
+import fun
+import cons
+import rule
 
 
 class Compiler():
@@ -48,6 +51,22 @@ int main() {
     return 0;
 }
 ''')
+
+    @staticmethod
+        def compilePrint():
+            c = ['case %d: c = "%s"; break;' % (i, c) for i, c in enumerate(cons.cons)]
+            return '''
+        switch (t->tag) {{
+            {0}
+            default: c = "";
+        }}
+        cout << c;
+        for(int i = 0; i < t->children.size(); i++) {{
+            cout << "(";
+            printTerm(t->children[i]);
+            cout << ")";
+        }}
+    '''.format('\n\t'.join(c))
 
 if __name__ == '__main__':
     filename = sys.argv[1]
