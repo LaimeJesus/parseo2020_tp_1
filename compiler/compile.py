@@ -16,6 +16,7 @@ class Compiler:
         self.template = ''
         self.ast = ast
         self.tags = {}
+        self.fun = []
 
     def template(self):
         with open(self.template_path, 'r') as content:
@@ -46,32 +47,31 @@ class Compiler:
         if head in ['program', 'imp', 'or', 'and', 'not', 'equal', 'rule']:
             for elem in ast[1]:
                 left_tags = self.generate_tags_rec(elem, tags)
-                tags = {**tags, **left_tags}
+                tags = tags | left_tags
             if head == 'rule':
                 right_tags = self.generate_tags_rec(ast[2], tags)
-                tags = {**tags, **right_tags}
+                tags = tags | right_tags
             else:
                 for elem in ast[2]:
                     right_tags = self.generate_tags_rec(elem, tags)
-                    tags = {**tags, **right_tags}
+                    tags = tags | right_tags
         elif head == 'fun': # fun id sig prec postc rules
             prec_tags = self.generate_tags_rec(ast[3], tags)
             post_tags = self.generate_tags_rec(ast[4], tags)
             for elem in ast[5]:
                 rules_tags = self.generate_tags_rec(elem, tags)
-                tags = {**tags, **rules_tags}
-            tags = {**tags, **prec_tags, **post_tags}
+                tags = tags | rules_tags
+            tags = tags | prec_tags | post_tags
         elif head in ['cons', 'pcons', 'app']:
             constructor = ast[1]
             if head != 'app' and constructor not in tags:
-                const_id = len(tags)
-                tags[constructor] = const_id
+                tags.add(constructor)
             for elem in ast[2]:
                 new_tags = self.generate_tags_rec(elem, tags)
-                tags = {**tags, **new_tags}
+                tags = tags | new_tags
         elif head in ['pre', 'post', 'check']: # pre formula
             new_tags = self.generate_tags_rec(ast[1], tags)
-            tags = {**tags, **new_tags}
+            tags = tags | new_tags
         elif head in ['var', 'pvar', 'true', 'false', 'pwild']:
             return tags
         else:
@@ -81,13 +81,45 @@ class Compiler:
 
 
     def generate_tags(self, ast):
-        tags = self.generate_tags_rec(ast, {})
+        tags = self.generate_tags_rec(ast, set())
+        id = 0
+        for elem in tags:
+            print(elem + ':' + str(id))
+            id += 1
         return tags
+
+    def generate_fun_rec(self, ast, fun):
+        if isinstance(ast, list) and len(ast) > 0:
+            head = ast[0]
+        else:
+            return fun
+        if head in ['program']:
+            for elem in ast[1]:
+                left_fun = self.generate_fun_rec(elem, fun)
+                fun = fun | left_fun
+        elif head == 'fun': # fun id sig prec postc rules
+            constructor = ast[1]
+            if constructor not in fun:
+                fun.add(constructor)
+        return fun
+
+    def generate_fun(self, ast):
+        fun = self.generate_fun_rec(ast, set())
+        id = 0
+        for elem in fun:
+            print('f_' + str(id))
+            print('pre_' + str(id))
+            print('post_' + str(id))
+            id += 1
+        return fun
 
     def compile(self):
         self.tags = self.generate_tags(self.ast)
         print('tags')
         print(self.tags)
+        self.fun = self.generate_fun(self.ast)
+        print('fun')
+        print(self.fun)
         # mapping = {}
         # for element in ast:
 
