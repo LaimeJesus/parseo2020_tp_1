@@ -1,4 +1,4 @@
-import compiler
+import compile
 import cons
 
 class Rule():
