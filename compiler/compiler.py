@@ -72,9 +72,9 @@ int main() {
     def loadFunctions():
         for f in Compiler.ast[1]:
             Compiler.funs.append(fun.Fun(f[1], f[2], f[3], f[4], f[5]))
-            
+
     @staticmethod
-        def compilePrint():
+    def compilePrint():
             c = ['case %d: c = "%s"; break;' % (i, c) for i, c in enumerate(cons.cons)]
             return '''
         switch (t->tag) {{
